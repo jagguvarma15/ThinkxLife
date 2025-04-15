@@ -1,6 +1,0 @@
-transformers
-torch
-langchain
-langchain-community
-openai
-grandalf
