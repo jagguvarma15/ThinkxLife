@@ -1,15 +1,16 @@
 from openai import OpenAI
 import streamlit as st
 from dotenv import load_dotenv
-import os
-import shelve
+from embed_utils import search_faiss_index
 from ace_questions import ace_questions
 from utils import compute_ace_score, reset_chat_state
+import shelve
+import os
 
 load_dotenv()
 
 
-st.set_page_config(page_title="ThinkxLife", page_icon="🧠")
+st.set_page_config(page_title="ThinkxLife", page_icon="💡")
 
 # Logo and Title in same row
 col1, col2 = st.columns([1, 6])
@@ -63,6 +64,7 @@ if not state["ace_completed"]:
             st.session_state.messages = [{"role": "assistant", "content": "Hi there! How can I support you today?"}]
 
 
+
 # --- Chat UI ---
 if state["ace_completed"]:
     # Display chat history
@@ -80,14 +82,26 @@ if state["ace_completed"]:
         with st.chat_message("assistant", avatar=BOT_AVATAR):
             message_placeholder = st.empty()
             full_response = ""
+
+            # ✅ Add this line to retrieve relevant chunks
+            context_chunks = search_faiss_index(prompt)
+            context_prompt = "\n\n".join(context_chunks)
+
+            system_prompt = {
+                "role": "system",
+                "content": f"You are Zoe, an empathetic assistant. Use the following context to help answer the user's question:\n\n{context_prompt}"
+            }
+
+            chat_history = [system_prompt] + st.session_state.messages
+
             for response in client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                messages=st.session_state.messages,
+                messages=chat_history,
                 stream=True,
             ):
                 full_response += response.choices[0].delta.content or ""
                 message_placeholder.markdown(full_response + "▌")
-            message_placeholder.markdown("**Zoe:** " + full_response)
 
+            message_placeholder.markdown("**Zoe:** " + full_response)
 
         st.session_state.messages.append({"role": "assistant", "content": full_response})

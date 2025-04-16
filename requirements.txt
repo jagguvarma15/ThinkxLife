@@ -1,3 +1,8 @@
+faiss-cpu
+openai
 streamlit
 python-dotenv
-openai
+sentence-transformers
+numpy
+scikit-learn
+numpy
