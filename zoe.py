@@ -8,9 +8,18 @@ from utils import compute_ace_score, reset_chat_state
 
 load_dotenv()
 
+
 st.set_page_config(page_title="ThinkxLife", page_icon="🧠")
-st.image("assets/logo.png", width=150)
-st.title("ThinkxLife - Empathetic Chatbot")
+
+# Logo and Title in same row
+col1, col2 = st.columns([1, 6])
+with col1:
+    st.image("assets/logo.png", width=80)
+with col2:
+    st.markdown("<h1 style='padding-top: 15px;'>Think Round, Inc</h1>", unsafe_allow_html=True)
+
+st.subheader("Meet Zoe - Your Empathetic AI Assistant 💬")
+
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 USER_AVATAR = "👤"
@@ -78,6 +87,7 @@ if state["ace_completed"]:
             ):
                 full_response += response.choices[0].delta.content or ""
                 message_placeholder.markdown(full_response + "▌")
-            message_placeholder.markdown(full_response)
+            message_placeholder.markdown("**Zoe:** " + full_response)
+
 
         st.session_state.messages.append({"role": "assistant", "content": full_response})
