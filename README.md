@@ -12,7 +12,7 @@ A modular, Flask-based chatbot API that begins with a short **questionnaire** to
 - 📋 Questionnaire-based entry to personalize chats
 - 🔍 Context-aware replies using FAISS + sentence-transformers
 - 🧠 Open-source LLM from Hugging Face (e.g., `OpenAssistant/oasst-sft-1-pythia-12b`)
-- 🔗 API built with Flask for easy integration
+- 🔗 Streamlit for UI
 
 ---
 
