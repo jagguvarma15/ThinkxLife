@@ -1,6 +1,7 @@
 faiss-cpu
 openai
 streamlit
+streamlit-lottie
 python-dotenv
 sentence-transformers
 numpy

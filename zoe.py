@@ -1,21 +1,17 @@
+#--- zoe.py ---
 import streamlit as st
+import time
 from dotenv import load_dotenv
 from app.chatbot_core import reset_chat_state, generate_response
+from app.utils import log_ace_result, log_chat
 from ui.ace_handler import handle_ace_questionnaire
-from ui.ui_components import render_user_info, render_history
+from ui.ui_components import render_user_info, render_logo_header, render_fixed_input_style, render_celebration_animation, render_footer
+from ui.advanced_ui import inject_chat_styles, render_chat_message, start_chat_container, end_chat_container
 
 load_dotenv()
 
 st.set_page_config(layout="wide", page_title="ThinkxLife", page_icon="💡")
-st.markdown(
-    """
-    <div style='text-align: center;'>
-        <img src='https://raw.githubusercontent.com/jagguvarma15/ThinkxLife/main/assets/logo.png' width='60' style='vertical-align: middle; margin-right: 10px;' />
-        <span style='font-size: 2em; font-weight: bold; vertical-align: middle;'>Think Round, Inc.</span>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+render_logo_header()
 
 # --- Init State ---
 if "state" not in st.session_state:
@@ -34,56 +30,51 @@ if not state["name"] or not state["age"]:
     st.stop()
 
 # --- ACE Questionnaire Flow ---
-just_finished = handle_ace_questionnaire(state)
+if not state["ace_completed"]:
+    handle_ace_questionnaire(state)
+    st.stop()
 
-if just_finished and not st.session_state.get("show_chat_button"):
+# --- ACE Completed: Show Thank You and Start Chat ---
+if state["ace_completed"] and not st.session_state.get("show_chat_button"):
+    if not st.session_state.get("ace_logged"):
+        log_ace_result(state)
+        st.session_state.ace_logged = True
+
     st.subheader("💭 ACE Questionnaire Complete")
     st.success(f"Thank you {state['name']} 🙏. Your ACE Score is **{state['ace_score']}/10**.")
     st.info("This doesn't define you — it's just one way to understand early experiences. I'm here to talk whenever you're ready 💜.")
-    if st.button("Start Chatting"):
+
+    #render_celebration_animation()
+
+    if st.button("Start Chat"):
         st.session_state.show_chat_button = True
+        with st.spinner("Starting your chat..."):
+            time.sleep(0.3)
         st.rerun()
+
     st.stop()
 
-# --- Sidebar like ChatGPT ---
+# --- Sidebar  ---
 with st.sidebar:
     st.title("🧠 Chat History")
-    render_history()
+    # You can optionally add session-based chat tabs here
 
 # --- Chat Header ---
 render_user_info()
 
-# --- Chat Messages ---
-chat_container = st.container()
-with chat_container:
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+# --- Styled Chat Messages ---
+inject_chat_styles()
+start_chat_container()
+for message in st.session_state.messages:
+    render_chat_message(message["role"], message["content"])
+end_chat_container()
 
 # --- Fixed Prompt Input Bar ---
-st.markdown(
-    """
-    <style>
-        .stChatInputContainer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 1rem 2rem;
-            background: white;
-            z-index: 9999;
-            box-shadow: 0 -1px 10px rgba(0,0,0,0.1);
-        }
-        .block-container {
-            padding-bottom: 100px !important;
-        }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+render_fixed_input_style()
 
 prompt = st.chat_input("How can I help?")
 if prompt:
+    log_chat("user", prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     with st.chat_message("user"):
@@ -95,3 +86,8 @@ if prompt:
         msg_placeholder.markdown(response)
 
     st.session_state.messages.append({"role": "assistant", "content": response})
+    log_chat("assistant", response)
+
+# --- Footer (visible only in chat mode) ---
+if st.session_state.get("show_chat_button"):
+    render_footer()
