@@ -1,25 +1,34 @@
 import streamlit as st
-from ace_questions import ace_questions
-from utils import compute_ace_score
+from app.chatbot_core import process_ace_response
+
+ace_questions = [
+    "Did a parent or adult in the household often swear at you, insult you, or humiliate you?",
+    "Did a parent or adult in the household often push, grab, slap, or throw something at you?",
+    "Did an adult ever touch or fondle you in a sexual way?",
+    "Did you often feel that no one in your family loved you or thought you were important?",
+    "Did you often feel that you didn't have enough to eat, had to wear dirty clothes, or had no one to protect you?",
+    "Was a biological parent ever lost to you through divorce, abandonment, or other reason?",
+    "Was your mother or stepmother often pushed, grabbed, slapped, or had something thrown at her?",
+    "Did you live with anyone who was a problem drinker or used street drugs?",
+    "Was a household member depressed, mentally ill, or did a household member attempt suicide?",
+    "Did a household member go to prison?",
+]
+
 
 def handle_ace_questionnaire(state):
-    st.subheader("💭 ACE Questionnaire")
     if state["ace_index"] < len(ace_questions):
+        st.subheader("🧍 Let's get to know you")
         q = ace_questions[state["ace_index"]]
         st.write(f"**Q{state['ace_index']+1}.** {q}")
         col1, col2, col3 = st.columns(3)
         if col1.button("Yes"):
-            state["ace_responses"].append("Yes")
-            state["ace_index"] += 1
+            process_ace_response(state, "Yes")
+            st.rerun()
         if col2.button("No"):
-            state["ace_responses"].append("No")
-            state["ace_index"] += 1
+            process_ace_response(state, "No")
+            st.rerun()
         if col3.button("Skip"):
-            state["ace_responses"].append("Skip")
-            state["ace_index"] += 1
+            process_ace_response(state, "Skip")
+            st.rerun()
         st.stop()
-    else:
-        score = compute_ace_score(state["ace_responses"])
-        st.success(f"Thank you {state['name']} 🙏. Your ACE Score is **{score}/10**.")
-        st.info("This doesn't define you — it's just one way to understand early experiences. I'm here to talk whenever you're ready 💜.")
-        state["ace_completed"] = True
+    return state["ace_completed"]

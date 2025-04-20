@@ -1,14 +1,10 @@
 import streamlit as st
-from openai import OpenAI
-from embed_utils import search_faiss_index
-import os
+from app.chatbot_core import generate_response
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+USER_AVATAR = "🕤"
+BOT_AVATAR = "🤖"
 
 def run_chatbot(state):
-    USER_AVATAR = "👤"
-    BOT_AVATAR = "🤖"
-
     if "messages" not in st.session_state:
         st.session_state.messages = [{"role": "assistant", "content": "Hi there! How can I support you today?"}]
 
@@ -24,26 +20,7 @@ def run_chatbot(state):
 
         with st.chat_message("assistant", avatar=BOT_AVATAR):
             message_placeholder = st.empty()
-            full_response = ""
+            response = generate_response(prompt, st.session_state.messages)
+            message_placeholder.markdown(response)
 
-            context_chunks = search_faiss_index(prompt)
-            context_prompt = "\n\n".join(context_chunks)
-
-            system_prompt = {
-                "role": "system",
-                "content": f"You are Zoe, an empathetic assistant. Use the following context to help answer the user's question:\n\n{context_prompt}"
-            }
-
-            chat_history = [system_prompt] + st.session_state.messages
-
-            for response in client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=chat_history,
-                stream=True,
-            ):
-                full_response += response.choices[0].delta.content or ""
-                message_placeholder.markdown(full_response + "▌")
-
-            message_placeholder.markdown("**Zoe:** " + full_response)
-
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
+        st.session_state.messages.append({"role": "assistant", "content": response})
