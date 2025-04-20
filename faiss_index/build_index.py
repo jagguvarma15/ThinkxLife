@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from embed_utils import load_context_chunks, embed_text_openai, build_faiss_index
+from app.embed_utils import load_context_chunks, embed_text_openai, build_faiss_index
 
 # Load chunks from relative path
 chunks = load_context_chunks("/Users/varma/Desktop/Thinkx/ThinkxLife/data/context.txt")

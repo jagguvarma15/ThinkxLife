@@ -1,107 +1,96 @@
-from openai import OpenAI
 import streamlit as st
 from dotenv import load_dotenv
-from embed_utils import search_faiss_index
-from ace_questions import ace_questions
-from utils import compute_ace_score, reset_chat_state
-import shelve
-import os
+from app.zoe import reset_chat_state, process_ace_response, generate_response
+from ui.ui_components import render_user_info, render_history
 
 load_dotenv()
 
+st.set_page_config(layout="wide", page_title="ThinkxLife", page_icon="💡")
+st.markdown(
+    """
+    <div style='text-align: center;'>
+        <img src='https://raw.githubusercontent.com/jagguvarma15/ThinkxLife/main/assets/logo.png' width='60' style='vertical-align: middle; margin-right: 10px;' />
+        <span style='font-size: 2em; font-weight: bold; vertical-align: middle;'>Think Round, Inc.</span>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-st.set_page_config(page_title="ThinkxLife", page_icon="💡")
-
-# Logo and Title in same row
-col1, col2 = st.columns([1, 6])
-with col1:
-    st.image("assets/logo.png", width=80)
-with col2:
-    st.markdown("<h1 style='padding-top: 15px;'>Think Round, Inc.</h1>", unsafe_allow_html=True)
-
-st.subheader("Meet Zoe - Your Empathetic AI Assistant 💬")
-
-
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-USER_AVATAR = "👤"
-BOT_AVATAR = "🤖"
-
+# --- Init State ---
 if "state" not in st.session_state:
     st.session_state.state = reset_chat_state()
 
 state = st.session_state.state
 
-# Name and Age
+# --- Name & Age Collection ---
 if not state["name"] or not state["age"]:
-    st.subheader("🧍 Let's get to know you")
+    st.subheader(f"{chr(0x1F9CD)} Let's get to know you")
     state["name"] = st.text_input("What is your name?")
-    state["age"] = st.number_input("What is your age?", min_value=5, max_value=100, step=1)
+    state["age"] = st.number_input("What is your age?", min_value=5, max_value=100)
     st.stop()
 
-# ACE Questionnaire
+# --- ACE Questions Inline (avoiding import issues) ---
+ace_questions = [
+    "Did a parent or adult in the household often swear at you, insult you, or humiliate you?",
+    "Did a parent or adult in the household often push, grab, slap, or throw something at you?",
+    "Did an adult ever touch or fondle you in a sexual way?",
+    "Did you often feel that no one in your family loved you or thought you were important?",
+    "Did you often feel that you didn't have enough to eat, had to wear dirty clothes, or had no one to protect you?",
+    "Was a biological parent ever lost to you through divorce, abandonment, or other reason?",
+    "Was your mother or stepmother often pushed, grabbed, slapped, or had something thrown at her?",
+    "Did you live with anyone who was a problem drinker or used street drugs?",
+    "Was a household member depressed, mentally ill, or did a household member attempt suicide?",
+    "Did a household member go to prison?",
+]
+
+# --- ACE Questionnaire Flow ---
 if not state["ace_completed"]:
     st.subheader("💭 ACE Questionnaire (Adverse Childhood Experiences)")
     if state["ace_index"] < len(ace_questions):
-        q = ace_questions[state["ace_index"]]
-        st.write(f"**Q{state['ace_index']+1}.** {q}")
+        question = ace_questions[state["ace_index"]]
+        st.write(f"**Q{state['ace_index'] + 1}.** {question}")
         col1, col2, col3 = st.columns(3)
         if col1.button("Yes"):
-            state["ace_responses"].append("Yes")
-            state["ace_index"] += 1
+            process_ace_response(state, "Yes")
+            st.rerun()
         if col2.button("No"):
-            state["ace_responses"].append("No")
-            state["ace_index"] += 1
+            process_ace_response(state, "No")
+            st.rerun()
         if col3.button("Skip"):
-            state["ace_responses"].append("Skip")
-            state["ace_index"] += 1
+            process_ace_response(state, "Skip")
+            st.rerun()
         st.stop()
     else:
-        score = compute_ace_score(state["ace_responses"])
-        st.success(f"Thank you {state['name']} 🙏. Your ACE Score is **{score}/10**.")
-        st.info("This doesn't define you — it's just one way to understand early experiences. I'm here to talk whenever you're ready 💜.")
-        state["ace_completed"] = True
-        if "messages" not in st.session_state:
-            st.session_state.messages = [{"role": "assistant", "content": "Hi there! How can I support you today?"}]
+        st.success(f"Thanks {state['name']}! Your ACE Score is {state['ace_score']}/10")
+        st.info("This doesn't define you — it's just a reference. Zoe is here to help 💜")
 
+# --- Chat State Init ---
+if "messages" not in st.session_state:
+    st.session_state.messages = [{"role": "assistant", "content": "Hi there! How can I support you today?"}]
 
+# --- Layout ---
+render_user_info()
+col_main, col_side = st.columns([3, 1])
 
-# --- Chat UI ---
-if state["ace_completed"]:
-    # Display chat history
+# --- Chat Interface ---
+with col_main:
     for message in st.session_state.messages:
-        avatar = USER_AVATAR if message["role"] == "user" else BOT_AVATAR
-        with st.chat_message(message["role"], avatar=avatar):
+        with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # Chat input
     if prompt := st.chat_input("How can I help?"):
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user", avatar=USER_AVATAR):
+
+        with st.chat_message("user"):
             st.markdown(prompt)
 
-        with st.chat_message("assistant", avatar=BOT_AVATAR):
-            message_placeholder = st.empty()
-            full_response = ""
+        with st.chat_message("assistant"):
+            msg_placeholder = st.empty()
+            response = generate_response(prompt, st.session_state.messages)
+            msg_placeholder.markdown(response)
 
-            # ✅ Add this line to retrieve relevant chunks
-            context_chunks = search_faiss_index(prompt)
-            context_prompt = "\n\n".join(context_chunks)
+        st.session_state.messages.append({"role": "assistant", "content": response})
 
-            system_prompt = {
-                "role": "system",
-                "content": f"You are Zoe, an empathetic assistant. Use the following context to help answer the user's question:\n\n{context_prompt}"
-            }
-
-            chat_history = [system_prompt] + st.session_state.messages
-
-            for response in client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=chat_history,
-                stream=True,
-            ):
-                full_response += response.choices[0].delta.content or ""
-                message_placeholder.markdown(full_response + "▌")
-
-            message_placeholder.markdown("**Zoe:** " + full_response)
-
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
+# --- Chat History Sidebar ---
+with col_side:
+    render_history()
