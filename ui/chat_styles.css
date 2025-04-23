@@ -1,0 +1,74 @@
+/* chat_styles.css */
+
+/* Chat container */
+.custom-chat-container {
+    max-width: 800px;
+    margin: auto;
+    padding: 10px 20px;
+}
+
+/* Message bubbles */
+.chat-bubble {
+    padding: 12px 16px;
+    border-radius: 15px;
+    margin: 8px 0;
+    max-width: 85%;
+    font-size: 15px;
+    line-height: 1.4;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.chat-bubble.user {
+    background-color: #DCF8C6;
+    align-self: flex-end;
+    border-top-right-radius: 0;
+}
+
+.chat-bubble.bot {
+    background-color: #f1f1f1;
+    align-self: flex-start;
+    border-top-left-radius: 0;
+}
+
+/* Avatars */
+.avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.message-wrapper {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.message-wrapper.user {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+.message-wrapper.bot {
+    flex-direction: row;
+    text-align: left;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-thumb {
+    background-color: #cccccc;
+    border-radius: 4px;
+}
+
+/* Footer and spacing */
+.chat-footer {
+    height: 70px;
+    margin-top: 40px;
+    text-align: center;
+    font-size: 12px;
+    color: #999;
+}

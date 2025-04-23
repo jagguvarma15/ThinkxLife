@@ -1,9 +1,11 @@
 faiss-cpu
 openai
 streamlit
+streamlit-lottie
 python-dotenv
 sentence-transformers
 numpy
 scikit-learn
 numpy
 torch
+transformers
