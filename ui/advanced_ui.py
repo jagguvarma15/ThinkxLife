@@ -2,13 +2,8 @@
 import streamlit as st
 import os
 
-AVATAR_USER = "assets/zoe.png"
-AVATAR_BOT = "assets/user.png"
-
-# Inject custom chat styles
-def inject_chat_styles():
-    with open("ui/chat_styles.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+AVATAR_USER = "assets/user.png"
+AVATAR_BOT = "assets/zoe.png"
 
 # Render a single chat message
 def render_chat_message(role, content):
@@ -21,10 +16,14 @@ def render_chat_message(role, content):
         cols = st.columns([1, 12]) if role == "assistant" else st.columns([12, 1])
 
         with cols[0 if role == "assistant" else 1]:
-            st.image(avatar_path, width=32)
+            try:
+                st.image(avatar_path, width=32)
+            except:
+                st.markdown("🤖" if role == "assistant" else "🧍")
 
         with cols[1 if role == "assistant" else 0]:
-            st.markdown(f"<div class='chat-bubble {bubble_class}'>{content}</div>", unsafe_allow_html=True)
+            align_style = "text-align: right;" if role != "assistant" else ""
+            st.markdown(f"<div class='chat-bubble {bubble_class}' style='{align_style}'>{content}</div>", unsafe_allow_html=True)
 
         st.markdown("</div>", unsafe_allow_html=True)
 

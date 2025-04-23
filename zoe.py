@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 from app.chatbot_core import reset_chat_state, generate_response
 from app.utils import log_ace_result, log_chat
 from ui.ace_handler import handle_ace_questionnaire
-from ui.ui_components import render_user_info, render_logo_header, render_fixed_input_style, render_celebration_animation, render_footer
-from ui.advanced_ui import inject_chat_styles, render_chat_message, start_chat_container, end_chat_container
+from ui.ui_components import render_logo_header, render_fixed_input_style, render_footer
+from ui.advanced_ui import render_chat_message, start_chat_container, end_chat_container
 
 load_dotenv()
 
@@ -23,12 +23,27 @@ if "messages" not in st.session_state:
     st.session_state.messages = [{"role": "assistant", "content": "Hi there! How can I support you today?"}]
 
 # --- Name & Age Collection ---
-if not state["name"] or not state["age"]:
+if not state["name"]:
     st.subheader(f"{chr(0x1F9CD)} Let's get to know you")
-    state["name"] = st.text_input("What is your name?")
-    state["age"] = st.number_input("What is your age?", min_value=5, max_value=100)
+    state["name"] = st.text_input("What is your name?", placeholder="Enter your First Name")
+    #st.stop()
+
+if state["age"] is None:
+    age_input = st.text_input("What is your age?", value="", placeholder="Enter your age")
+    if age_input.strip().isdigit():
+        state["age"] = int(age_input.strip())
+        st.rerun()
+    else:
+        st.stop()
+
+
+# Age Restriction Check (only after both fields filled)
+if state["age"] < 18:
+    st.error("⚠️ You must be 18 years or older to use this assistant.")
+    st.warning("Session ended due to age restrictions for usage.")
     st.stop()
 
+    
 # --- ACE Questionnaire Flow ---
 if not state["ace_completed"]:
     handle_ace_questionnaire(state)
@@ -56,16 +71,17 @@ if state["ace_completed"] and not st.session_state.get("show_chat_button"):
 
 # --- Sidebar  ---
 with st.sidebar:
-    st.title("🧠 Chat History")
-    # You can optionally add session-based chat tabs here
+    from ui.ui_components import render_history
+    render_history()
 
-# --- Chat Header ---
-render_user_info()
 
 # --- Styled Chat Messages ---
-inject_chat_styles()
 start_chat_container()
-for message in st.session_state.messages:
+for idx, message in enumerate(st.session_state.messages):
+    anchor_id = f"msg-{idx}"
+    if idx == st.session_state.get("scroll_to_index"):
+        st.markdown(f"<div id='{anchor_id}'></div>", unsafe_allow_html=True)
+        st.components.v1.html(f"<script>document.getElementById('{anchor_id}').scrollIntoView({{ behavior: 'smooth' }});</script>", height=0)
     render_chat_message(message["role"], message["content"])
 end_chat_container()
 
@@ -77,13 +93,14 @@ if prompt:
     log_chat("user", prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar="assets/user.png"):
         st.markdown(prompt)
 
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar="assets/zoe.png"):
         msg_placeholder = st.empty()
         response = generate_response(prompt, st.session_state.messages)
         msg_placeholder.markdown(response)
+
 
     st.session_state.messages.append({"role": "assistant", "content": response})
     log_chat("assistant", response)

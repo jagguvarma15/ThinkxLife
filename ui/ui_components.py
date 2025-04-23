@@ -1,36 +1,36 @@
 import streamlit as st
-from streamlit_lottie import st_lottie
-import requests
 
 
-def render_user_info():
-    """Top bar showing name and age"""
-    state = st.session_state.state
-    if state["name"] and state["age"]:
-        st.markdown(f"""
-            <div style="background-color:#f0f2f6;
-                        padding:10px;
-                        border-radius:10px;
-                        margin-bottom:10px;
-                        text-align:center;">
-                <strong>User:</strong> {state['name']} &nbsp;&nbsp;
-                <strong>Age:</strong> {state['age']}
-            </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.info("User info will appear here after name and age are entered.")
-
+# Sidebar history showing user prompts only, clickable to scroll
 def render_history():
-    """Sidebar history tab on the right"""
-    if "messages" in st.session_state:
-        for idx, msg in enumerate(st.session_state.messages):
-            if msg["role"] == "user":
-                st.markdown(f"**You:** {msg['content']}")
-            elif msg["role"] == "assistant":
-                st.markdown(f"**Zoe:** {msg['content']}")
-    else:
-        st.write("No messages yet.")
+    state = st.session_state.state
 
+    # Stylish Name & Age Card
+    st.markdown(f"""
+    <div style="background-color: #ffffff;
+                border-left: 6px solid #4A90E2;
+                border-radius: 8px;
+                padding: 15px 20px;
+                margin-bottom: 20px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+        <div style="font-size: 1.1rem; font-weight: bold; color: #333;">Name</div>
+        <div style="font-size: 1.25rem; color: #111; margin-bottom: 10px;">{state['name']}</div>
+        <div style="font-size: 1.1rem; font-weight: bold; color: #333;">Age</div>
+        <div style="font-size: 1.25rem; color: #111;">{state['age']}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### 💬 Your Prompts")
+
+    for idx, msg in enumerate(st.session_state.messages):
+        if msg["role"] == "user":
+            label = msg["content"][:40] + ("..." if len(msg["content"]) > 40 else "")
+            if st.button(f"🗨️ {label}", key=f"nav-{idx}"):
+                st.session_state.scroll_to_index = idx
+                st.rerun()
+
+
+# Logo header
 def render_logo_header():
     st.markdown(
         """
@@ -42,6 +42,27 @@ def render_logo_header():
         unsafe_allow_html=True
     )
 
+# Footer
+def render_footer():
+    st.markdown(
+        """
+        <style>
+        .footer {
+            position: fixed;
+            bottom: 5px;
+            right: 10px;
+            font-size: 0.8rem;
+            color: #999999;
+        }
+        </style>
+        <div class="footer">
+            © 2025 Think Round, Inc.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# Input bar CSS
 def render_fixed_input_style():
     st.markdown(
         """
@@ -60,32 +81,6 @@ def render_fixed_input_style():
                 padding-bottom: 100px !important;
             }
         </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    
-def render_celebration_animation():
-    url = "https://assets4.lottiefiles.com/packages/lf20_jcikwtux.json"
-    res = requests.get(url)
-    if res.status_code == 200:
-        st_lottie(res.json(), height=200, speed=1, loop=False)
-
-def render_footer():
-    st.markdown(
-        """
-        <style>
-        .footer {
-            position: fixed;
-            bottom: 5px;
-            right: 10px;
-            font-size: 0.8rem;
-            color: #999999;
-        }
-        </style>
-        <div class="footer">
-            © 2025 Think Round, Inc.
-        </div>
         """,
         unsafe_allow_html=True
     )

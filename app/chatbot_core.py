@@ -7,8 +7,6 @@ import os
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-USER_AVATAR = "👤"
-BOT_AVATAR = "🤖"
 
 def init_chat():
     return [{"role": "assistant", "content": "Hi there! How can I support you today?"}]
