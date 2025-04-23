@@ -84,3 +84,29 @@ def render_fixed_input_style():
         """,
         unsafe_allow_html=True
     )
+
+
+def render_globe_button():
+    st.markdown("""
+        <style>
+            .globe-button {
+                position: absolute;
+                top: 1rem;
+                right: 1rem;
+                background: #f5f7fa;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                padding: 6px 10px;
+                font-size: 1.1rem;
+                color: #0077cc;
+                text-decoration: none;
+                transition: all 0.2s ease-in-out;
+                z-index: 1000;
+            }
+            .globe-button:hover {
+                background: #e0ecf8;
+                color: #005fa3;
+            }
+        </style>
+        <a href="https://www.thinkround.org/" target="_blank" class="globe-button">🌐</a>
+    """, unsafe_allow_html=True)

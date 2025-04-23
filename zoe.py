@@ -5,13 +5,14 @@ from dotenv import load_dotenv
 from app.chatbot_core import reset_chat_state, generate_response
 from app.utils import log_ace_result, log_chat
 from ui.ace_handler import handle_ace_questionnaire
-from ui.ui_components import render_logo_header, render_fixed_input_style, render_footer
-from ui.advanced_ui import render_chat_message, start_chat_container, end_chat_container
+from ui.ui_components import render_logo_header, render_fixed_input_style, render_footer, render_globe_button
+from ui.advanced_ui import render_chat_message, start_chat_container, end_chat_container, render_styled_chat
 
 load_dotenv()
 
 st.set_page_config(layout="wide", page_title="ThinkxLife", page_icon="💡")
 render_logo_header()
+
 
 # --- Init State ---
 if "state" not in st.session_state:
@@ -69,6 +70,7 @@ if state["ace_completed"] and not st.session_state.get("show_chat_button"):
 
     st.stop()
 
+render_globe_button()
 # --- Sidebar  ---
 with st.sidebar:
     from ui.ui_components import render_history
@@ -76,14 +78,8 @@ with st.sidebar:
 
 
 # --- Styled Chat Messages ---
-start_chat_container()
-for idx, message in enumerate(st.session_state.messages):
-    anchor_id = f"msg-{idx}"
-    if idx == st.session_state.get("scroll_to_index"):
-        st.markdown(f"<div id='{anchor_id}'></div>", unsafe_allow_html=True)
-        st.components.v1.html(f"<script>document.getElementById('{anchor_id}').scrollIntoView({{ behavior: 'smooth' }});</script>", height=0)
-    render_chat_message(message["role"], message["content"])
-end_chat_container()
+render_styled_chat()
+
 
 # --- Fixed Prompt Input Bar ---
 render_fixed_input_style()
