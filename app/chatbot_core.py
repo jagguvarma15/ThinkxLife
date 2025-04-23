@@ -7,10 +7,6 @@ import os
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-
-def init_chat():
-    return [{"role": "assistant", "content": "Hi there! How can I support you today?"}]
-
 def process_ace_response(state, answer):
     state["ace_responses"].append(answer)
     state["ace_index"] += 1

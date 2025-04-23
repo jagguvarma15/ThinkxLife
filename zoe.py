@@ -21,7 +21,7 @@ if "state" not in st.session_state:
 state = st.session_state.state
 
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "Hi there! How can I support you today?"}]
+    st.session_state.messages = [{"role": "assistant", "content": "Hi, this is Zoe. Thank you for being here — your presence matters. I'm grateful to share in your kindness!"}]
 
 # --- Name & Age Collection ---
 if not state["name"]:
