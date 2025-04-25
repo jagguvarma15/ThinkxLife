@@ -33,16 +33,17 @@ def build_faiss_index(chunks, embeddings, save_path="faiss_index/index.pkl"):
         pickle.dump((index, chunks), f)
 
 def search_faiss_index(query, save_path="faiss_index/index.pkl", top_k=3):
-    
     if not os.path.exists(save_path):
         return ["(No knowledge base available yet. Please build the FAISS index.)"]
     
     with open(save_path, "rb") as f:
         index, chunks = pickle.load(f)
+
     response = client.embeddings.create(
         model="text-embedding-ada-002",
         input=query
     )
     query_vec = np.array(response.data[0].embedding).reshape(1, -1).astype("float32")
     D, I = index.search(query_vec, top_k)
+
     return [chunks[i] for i in I[0]]
