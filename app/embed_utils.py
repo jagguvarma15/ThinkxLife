@@ -34,16 +34,32 @@ def build_faiss_index(chunks, embeddings, save_path="faiss_index/index.pkl"):
 
 def search_faiss_index(query, save_path="faiss_index/index.pkl", top_k=3):
     if not os.path.exists(save_path):
-        return ["(No knowledge base available yet. Please build the FAISS index.)"]
-    
-    with open(save_path, "rb") as f:
-        index, chunks = pickle.load(f)
+        return ["(No knowledge base available yet. Please build and upload FAISS index.)"]
 
-    response = client.embeddings.create(
-        model="text-embedding-ada-002",
-        input=query
-    )
-    query_vec = np.array(response.data[0].embedding).reshape(1, -1).astype("float32")
-    D, I = index.search(query_vec, top_k)
+    try:
+        with open(save_path, "rb") as f:
+            index, chunks = pickle.load(f)
+    except Exception as e:
+        print(f"Failed to load FAISS index from {save_path}: {e}")
+        return ["(Knowledge base error.)"]
 
-    return [chunks[i] for i in I[0]]
+    try:
+        response = client.embeddings.create(
+            model="text-embedding-ada-002",
+            input=query
+        )
+        query_vec = np.array(response.data[0].embedding, dtype=np.float32).reshape(1, -1)
+    except Exception as e:
+        print("Embedding generation error:", e)
+        return ["(Failed to process your question.)"]
+
+    try:
+        if query_vec.shape[1] != index.d:
+            print(f"Dimension mismatch: query_vec {query_vec.shape[1]} vs index {index.d}")
+            return ["(Knowledge base dimension mismatch.)"]
+
+        D, I = index.search(query_vec, top_k)
+        return [chunks[i] for i in I[0]]
+    except Exception as e:
+        print("FAISS search error:", e)
+        return ["(Failed to find related info.)"]
