@@ -2,10 +2,12 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from app.embed_utils import search_faiss_index
 from app.utils import compute_ace_score, reset_chat_state
+import streamlit as st
 import os
 
+
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 def process_ace_response(state, answer):
     state["ace_responses"].append(answer)
