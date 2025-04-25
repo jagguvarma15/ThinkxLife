@@ -3,11 +3,12 @@ import pickle
 import faiss
 from openai import OpenAI
 from dotenv import load_dotenv
+import streamlit as st
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 def load_context_chunks(filepath, chunk_size=300):
     with open(filepath, "r", encoding="utf-8") as f:
