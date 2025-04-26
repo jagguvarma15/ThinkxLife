@@ -1,9 +1,10 @@
 import streamlit as st
 import json
-from app.chatbot_core import process_ace_response
+from app.chatbot_core import compute_ace_score, process_ace_response
 
 with open("data/ace_questions.json", "r") as f:
     ace_questions = json.load(f)
+
 
 def handle_ace_questionnaire(state):
     if state["ace_index"] < len(ace_questions):
@@ -21,8 +22,11 @@ def handle_ace_questionnaire(state):
             process_ace_response(state, "Skip")
             st.rerun()
         st.stop()
-        
+
+    # When questionnaire is done:
     if state["ace_index"] >= len(ace_questions) and not state["ace_completed"]:
         state["ace_completed"] = True
-        return True 
+        state["ace_score"] = compute_ace_score(state["ace_responses"])
+        return True
+
     return False
