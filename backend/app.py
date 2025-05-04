@@ -21,20 +21,25 @@ def log_message(user_msg, bot_msg):
 # Log user info to a separate CSV
 USER_LOG_FILE = "logs/user_logs.csv"
 
-@app.route("/user", methods=["POST"])
-def register_user():
+@app.route("/ace-results", methods=["POST"])
+def log_ace_results():
     data = request.get_json()
     name = data.get("name")
     age = data.get("age")
+    score = data.get("score")
+    responses = data.get("responses")
 
-    if not name or not age:
-        return jsonify({"error": "Name and age required"}), 400
+    if not name or age is None or responses is None:
+        return jsonify({"error": "Invalid data"}), 400
 
-    with open(USER_LOG_FILE, mode="a", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow([datetime.datetime.now(), name, age])
+    log_file = "logs/ace_logs.csv"
+    os.makedirs("logs", exist_ok=True)
+    with open(log_file, "a", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow([datetime.datetime.now(), name, age, score, ";".join(map(str, responses))])
 
-    return jsonify({"message": "User registered successfully"}), 200
+    return jsonify({"message": "Results logged successfully"}), 200
+
 
 
 @app.route("/chat", methods=["POST"])
