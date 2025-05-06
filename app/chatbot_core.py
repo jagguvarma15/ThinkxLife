@@ -1,16 +1,21 @@
 from openai import OpenAI
 from dotenv import load_dotenv
-from app.embed_utils import search_faiss_index
 from app.utils import compute_ace_score
 import streamlit as st
-import os
+from app.config import OPENAI_API_KEY
+from langchain.vectorstores import Chroma
+from langchain.embeddings import OpenAIEmbeddings
 
+embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+client = OpenAI(api_key=OPENAI_API_KEY)
 
-load_dotenv()
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+vectorstore = Chroma(persist_directory="chroma_db", embedding_function=embeddings)
+retriever = vectorstore.as_retriever()
 
 def generate_response(prompt, message_history):
-    context_chunks = search_faiss_index(prompt)
+    docs = retriever.get_relevant_documents(prompt)
+    context_chunks = [doc.page_content for doc in docs]
+
     context_prompt = "\n\n".join(context_chunks)
 
     system_prompt = {
