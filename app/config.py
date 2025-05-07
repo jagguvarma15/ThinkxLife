@@ -1,10 +1,10 @@
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
-# Load .env for local dev (safe to call even on Render)
-load_dotenv()
+# Load from .env locally
+load_dotenv(find_dotenv())
 
-# Try to get from environment variable (Render) or fallback to .env (local)
+# Always try to get from environment
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
 if not OPENAI_API_KEY:
