@@ -1,14 +1,17 @@
 import os
-import pickle
-import faiss
 from openai import OpenAI
 from dotenv import load_dotenv
 import streamlit as st
-from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
+from app.config import OPENAI_API_KEY
+from langchain.vectorstores import Chroma
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.schema.document import Document
 
-load_dotenv()
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+client = OpenAI(api_key=OPENAI_API_KEY)
+
 
 def load_context_chunks(filepath, chunk_size=300):
     with open(filepath, "r", encoding="utf-8") as f:
@@ -25,41 +28,18 @@ def embed_text_openai(chunks):
         embeddings.append(response.data[0].embedding)
     return embeddings
 
-def build_faiss_index(chunks, embeddings, save_path="faiss_index/index.pkl"):
-    dim = len(embeddings[0])
-    index = faiss.IndexFlatL2(dim)
-    index.add(np.array(embeddings).astype("float32"))
-    with open(save_path, "wb") as f:
-        pickle.dump((index, chunks), f)
 
-def search_faiss_index(query, save_path="faiss_index/index.pkl", top_k=3):
-    if not os.path.exists(save_path):
-        return ["(No knowledge base available yet. Please build and upload FAISS index.)"]
+def build_chroma_index(chunks, persist_dir="chroma_db"):
+    #embeddings = OpenAIEmbeddings()
+    docs = [Document(page_content=chunk) for chunk in chunks]
+    vectorstore = Chroma.from_documents(docs, embedding=embeddings, persist_directory=persist_dir)
+    vectorstore.persist()
+    print(f"Chroma index persisted at: {persist_dir}")
 
-    try:
-        with open(save_path, "rb") as f:
-            index, chunks = pickle.load(f)
-    except Exception as e:
-        print(f"Failed to load FAISS index from {save_path}: {e}")
-        return ["(Knowledge base error.)"]
+def search_chroma_index(query, persist_dir="chroma_db", top_k=3):
+    #embeddings = OpenAIEmbeddings()
+    vectorstore = Chroma(persist_directory=persist_dir, embedding_function=embeddings)
+    retriever = vectorstore.as_retriever(search_kwargs={"k": top_k})
+    docs = retriever.get_relevant_documents(query)
+    return [doc.page_content for doc in docs]
 
-    try:
-        response = client.embeddings.create(
-            model="text-embedding-ada-002",
-            input=query
-        )
-        query_vec = np.array(response.data[0].embedding, dtype=np.float32).reshape(1, -1)
-    except Exception as e:
-        print("Embedding generation error:", e)
-        return ["(Failed to process your question.)"]
-
-    try:
-        if query_vec.shape[1] != index.d:
-            print(f"Dimension mismatch: query_vec {query_vec.shape[1]} vs index {index.d}")
-            return ["(Knowledge base dimension mismatch.)"]
-
-        D, I = index.search(query_vec, top_k)
-        return [chunks[i] for i in I[0]]
-    except Exception as e:
-        print("FAISS search error:", e)
-        return ["(Failed to find related info.)"]

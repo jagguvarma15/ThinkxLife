@@ -1,4 +1,4 @@
-faiss-cpu
+chromadb
 openai
 streamlit
 streamlit-lottie
@@ -9,3 +9,7 @@ scikit-learn
 numpy
 torch
 transformers
+langchain-core
+langchain-community
+tiktoken
+bs4
