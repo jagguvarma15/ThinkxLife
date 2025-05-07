@@ -12,3 +12,4 @@ transformers
 langchain-core
 langchain-community
 tiktoken
+bs4
