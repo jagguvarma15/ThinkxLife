@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: zoe-chatbot
+    env: python
+    buildCommand: ""
+    startCommand: streamlit run zoe.py
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false  # You'll set this manually on the dashboard
