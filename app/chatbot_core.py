@@ -3,8 +3,9 @@ from dotenv import load_dotenv
 from app.utils import compute_ace_score
 import streamlit as st
 from app.config import OPENAI_API_KEY
-from langchain.vectorstores import Chroma
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import OpenAIEmbeddings
+
 
 embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -12,7 +13,10 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 vectorstore = Chroma(persist_directory="chroma_db", embedding_function=embeddings)
 retriever = vectorstore.as_retriever()
 
-def generate_response(prompt, message_history):
+def generate_response(prompt, message_history=None):
+    if message_history is None:
+        message_history = []
+
     docs = retriever.get_relevant_documents(prompt)
     context_chunks = [doc.page_content for doc in docs]
 
@@ -26,16 +30,16 @@ def generate_response(prompt, message_history):
     chat_history = [system_prompt] + message_history
     full_response = ""
 
-    for response in client.chat.completions.create(
+    # Non-streaming version for simplicity in REST
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=chat_history,
-        stream=True,
-    ):
-        full_response += response.choices[0].delta.content or ""
+    )
+    full_response = response.choices[0].message.content.strip()
 
     return full_response
 
-import streamlit as st
+
 
 def process_ace_response(state, response):
     """
