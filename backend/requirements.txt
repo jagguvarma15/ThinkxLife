@@ -7,3 +7,5 @@ langchain-community
 langchain-core
 pandas
 numpy
+langchain-openai
+langchain-chroma
