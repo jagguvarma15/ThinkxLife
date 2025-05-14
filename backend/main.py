@@ -21,12 +21,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+async def root():
+    return {"status": "Zoe backend is up!"}
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     try:
         # DEBUG: print the API key to verify .env loaded
-        print("OPENAI_API_KEY =", os.getenv("OPENAI_API_KEY")[:8] + "…")
-        # Generate response with only message and history
+        key = os.getenv("OPENAI_API_KEY")
+        print("OPENAI_API_KEY =", (key[:8] + "…") if key else "(not set)")
         reply = generate_response(req.message, req.history)
         return ChatResponse(response=reply)
 
@@ -34,5 +42,4 @@ async def chat(req: ChatRequest):
         # print full traceback to your Uvicorn console
         print("Exception in /chat:")
         traceback.print_exc()
-        # return a clean HTTP 500 with the error message
         raise HTTPException(status_code=500, detail=str(e))
